@@ -17,9 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # shortcut: master only, since no release has the ops-plane module path yet; add v0.12.0 (the oldest OPS
-        # it supports) once that's released
-        ops: [master]
+        ops: [master, v0.12.0] # the newest and the oldest OPS it supports (the first with the ops-plane module path)
     services:
       postgres:
         image: postgres:17
