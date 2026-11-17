@@ -14,10 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_registry_module: a module of Opsolete's registry published from a repository's tags (admins'). Destroying
+// ops_registry_module: a module of OPS's registry published from a repository's tags (admins'). Destroying
 // it stops publishing; the versions published stay, as workspaces pin them.
 
 type registryModuleModel struct {
@@ -53,7 +53,7 @@ func (r *registryModuleResource) Schema(_ context.Context, _ resource.SchemaRequ
 	replace := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	address := []planmodifier.String{stringplanmodifier.RequiresReplace(), stringplanmodifier.UseStateForUnknown()}
 	resp.Schema = schema.Schema{
-		Description: "A module of Opsolete's private registry, published from a repository: each tag (with tag_prefix) becomes a version, now and as new tags come. Destroying it stops publishing; the versions published stay, as workspaces pin them. Changing the source publishes it again.",
+		Description: "A module of OPS's private registry, published from a repository: each tag (with tag_prefix) becomes a version, now and as new tags come. Destroying it stops publishing; the versions published stay, as workspaces pin them. Changing the source publishes it again.",
 		Attributes: map[string]schema.Attribute{
 			"id":                schema.StringAttribute{Computed: true, Description: "<namespace>/<name>/<system>.", PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"vcs_connection_id": schema.StringAttribute{Required: true, PlanModifiers: replace, Description: "The VCS connection that reads the repository."},

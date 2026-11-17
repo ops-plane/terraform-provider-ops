@@ -12,10 +12,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_template_catalog: where the templates come from, one per installation (admins'). Destroying it disconnects
+// ops_template_catalog: where the templates come from, one per installation (admins'). Destroying it disconnects
 // the catalog: the templates come from TEMPLATES_DIR again.
 
 type templateCatalogModel struct {
@@ -47,7 +47,7 @@ func (r *templateCatalogResource) Metadata(_ context.Context, req resource.Metad
 func (r *templateCatalogResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	computed := []planmodifier.String{stringplanmodifier.UseStateForUnknown()}
 	resp.Schema = schema.Schema{
-		Description: "The template catalog: a folder of JSON templates in a repository branch, one per installation; Opsolete loads each new commit. Destroying it disconnects the catalog: the templates come from TEMPLATES_DIR again.",
+		Description: "The template catalog: a folder of JSON templates in a repository branch, one per installation; OPS loads each new commit. Destroying it disconnects the catalog: the templates come from TEMPLATES_DIR again.",
 		Attributes: map[string]schema.Attribute{
 			"id":                schema.StringAttribute{Computed: true, PlanModifiers: computed},
 			"vcs_connection_id": schema.StringAttribute{Required: true, Description: "The VCS connection that reads it; with mode `commit` or `pr` one with write access."},
@@ -55,7 +55,7 @@ func (r *templateCatalogResource) Schema(_ context.Context, _ resource.SchemaReq
 			"branch":            schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("main")},
 			"dir":               schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString(""), Description: "The folder of the templates; empty: the root."},
 			"mode": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("off"),
-				Description: "What saving a template in Opsolete's builder does: `off` (templates are edited in Git only), `commit` (to the branch) or `pr` (a pull request).",
+				Description: "What saving a template in OPS's builder does: `off` (templates are edited in Git only), `commit` (to the branch) or `pr` (a pull request).",
 				Validators:  []validator.String{stringvalidator.OneOf("off", "commit", "pr")}},
 			"commit":     schema.StringAttribute{Computed: true, Description: "The commit loaded."},
 			"sync_error": schema.StringAttribute{Computed: true, Description: "Why the last commit didn't load (an invalid template), if it didn't: the catalog keeps the templates it had."},

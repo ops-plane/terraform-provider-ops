@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
 func pathRoot(name string) path.Path { return path.Root(name) }

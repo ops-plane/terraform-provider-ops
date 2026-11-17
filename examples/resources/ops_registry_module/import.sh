@@ -1,0 +1,1 @@
+terraform import ops_registry_module.storage_account terraform-modules-examples/storage-account/azurerm

@@ -17,11 +17,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_variable_set: variables shared by many workspaces (admins'). Where it applies: global, or attached to
-// projects and workspaces (opsolete_variable_set_project, opsolete_variable_set_workspace).
+// ops_variable_set: variables shared by many workspaces (admins'). Where it applies: global, or attached to
+// projects and workspaces (ops_variable_set_project, ops_variable_set_workspace).
 
 type variableSetModel struct {
 	ID          types.String `tfsdk:"id"`
@@ -46,7 +46,7 @@ func (r *variableSetResource) Metadata(_ context.Context, req resource.MetadataR
 
 func (r *variableSetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A variable set: variables (opsolete_variable_set_variable) shared by many workspaces, such as a subscription's credentials. It applies globally, or where it's attached (opsolete_variable_set_project, opsolete_variable_set_workspace). Repository-linked workspaces get only sets attached to them.",
+		Description: "A variable set: variables (ops_variable_set_variable) shared by many workspaces, such as a subscription's credentials. It applies globally, or where it's attached (ops_variable_set_project, ops_variable_set_workspace). Repository-linked workspaces get only sets attached to them.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			"name": schema.StringAttribute{Required: true, PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
@@ -132,7 +132,7 @@ func (r *variableSetResource) ImportState(ctx context.Context, req resource.Impo
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
-// opsolete_variable_set_project and opsolete_variable_set_workspace: a set applied to one project's workspaces or to
+// ops_variable_set_project and ops_variable_set_workspace: a set applied to one project's workspaces or to
 // one workspace. Its own resource, so a workspace's configuration can attach a set without owning the set's list.
 
 type attachmentResource struct {
@@ -245,7 +245,7 @@ func (r *attachmentResource) ImportState(ctx context.Context, req resource.Impor
 	r.save(ctx, &resp.State, parts[0], parts[1], &resp.Diagnostics)
 }
 
-// data "opsolete_variable_set": a variable set by name.
+// data "ops_variable_set": a variable set by name.
 
 type variableSetDataSource struct{ base }
 

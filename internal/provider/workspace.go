@@ -16,10 +16,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_workspace: an empty workspace and its settings. Its templates are added in Opsolete's UI.
+// ops_workspace: an empty workspace and its settings. Its templates are added in OPS's UI.
 
 type workspaceModel struct {
 	ID             types.String `tfsdk:"id"`
@@ -46,7 +46,7 @@ func (r *workspaceResource) Metadata(_ context.Context, req resource.MetadataReq
 
 func (r *workspaceResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "A workspace: one Terraform state and its runs. Created empty; templates are added to it in Opsolete's UI (adding one starts a plan).",
+		Description: "A workspace: one Terraform state and its runs. Created empty; templates are added to it in OPS's UI (adding one starts a plan).",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{Computed: true, Description: "The workspace's id: it stays when the workspace is renamed or moved.",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
@@ -57,7 +57,7 @@ func (r *workspaceResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"auto_apply": schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false),
 				Description: "Apply plans without asking for confirmation."},
 			"execution_mode": schema.StringAttribute{Optional: true, Computed: true, Default: stringdefault.StaticString("remote"),
-				Description: "`remote`: runs on Opsolete's runners; `local`: the Terraform CLI runs (a `cloud` block), Opsolete keeps the state.",
+				Description: "`remote`: runs on OPS's runners; `local`: the Terraform CLI runs (a `cloud` block), OPS keeps the state.",
 				Validators:  []validator.String{stringvalidator.OneOf("remote", "local")}},
 			"drift_detection": schema.BoolAttribute{Optional: true, Computed: true, Default: booldefault.StaticBool(false),
 				Description: "A daily drift check (a refresh-only plan, never applied)."},
@@ -155,7 +155,7 @@ func (r *workspaceResource) ImportState(ctx context.Context, req resource.Import
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
-// data "opsolete_workspace": a workspace by name.
+// data "ops_workspace": a workspace by name.
 
 type workspaceDataSource struct{ base }
 

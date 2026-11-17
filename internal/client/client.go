@@ -1,4 +1,4 @@
-// Package client talks to Opsolete's JSON API (/api/v1) with a token: objects by id, PATCH of the fields sent,
+// Package client talks to OPS's JSON API (/api/v1) with a token: objects by id, PATCH of the fields sent,
 // errors as {"error": message, "fields": {field: message}}.
 package client
 
@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-// Client is an Opsolete server and the token it's called with.
+// Client is an OPS server and the token it's called with.
 type Client struct {
-	BaseURL *url.URL // e.g. https://opsolete.example.com
+	BaseURL *url.URL // e.g. https://ops.example.com
 	Token   string
 	HTTP    *http.Client
 }
@@ -26,7 +26,7 @@ type Client struct {
 func New(baseURL, token string) (*Client, error) {
 	u, err := url.Parse(strings.TrimRight(baseURL, "/"))
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return nil, fmt.Errorf("url %q: an absolute URL such as https://opsolete.example.com", baseURL)
+		return nil, fmt.Errorf("url %q: an absolute URL such as https://ops.example.com", baseURL)
 	}
 	return &Client{BaseURL: u, Token: token, HTTP: &http.Client{Timeout: 2 * time.Minute}}, nil
 }
@@ -39,7 +39,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	msg := fmt.Sprintf("Opsolete answered %d: %s", e.Status, e.Message)
+	msg := fmt.Sprintf("OPS answered %d: %s", e.Status, e.Message)
 	keys := make([]string, 0, len(e.Fields))
 	for k := range e.Fields {
 		keys = append(keys, k)

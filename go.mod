@@ -1,4 +1,4 @@
-module github.com/opsolete/terraform-provider-opsolete
+module github.com/ops-plane/terraform-provider-ops
 
 go 1.26.10
 

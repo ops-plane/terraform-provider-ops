@@ -17,10 +17,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_vcs_connection: an access token for GitHub or Azure DevOps (admins'). The token is write-only.
+// ops_vcs_connection: an access token for GitHub or Azure DevOps (admins'). The token is write-only.
 
 type vcsConnectionModel struct {
 	ID           types.String `tfsdk:"id"`
@@ -119,7 +119,7 @@ func (r *vcsConnectionResource) Read(ctx context.Context, req resource.ReadReque
 		apiError(&resp.Diagnostics, "Reading the VCS connection", err)
 		return
 	}
-	m.set(ctx, c, &resp.Diagnostics) // the token stays as configured: Opsolete doesn't return it
+	m.set(ctx, c, &resp.Diagnostics) // the token stays as configured: OPS doesn't return it
 	resp.Diagnostics.Append(resp.State.Set(ctx, &m)...)
 }
 
@@ -164,7 +164,7 @@ func (r *vcsConnectionResource) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
-// data "opsolete_vcs_connection": a VCS connection by name (never its token).
+// data "ops_vcs_connection": a VCS connection by name (never its token).
 
 type vcsConnectionDataSource struct{ base }
 

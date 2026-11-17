@@ -11,10 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_runner: a runner registered in a pool, and its token (admins'). The token is what the runner starts with
+// ops_runner: a runner registered in a pool, and its token (admins'). The token is what the runner starts with
 // (OPS_RUNNER_TOKEN): created here and returned once, or one from a secret store, registered.
 
 type runnerModel struct {
@@ -43,7 +43,7 @@ func (r *runnerResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "It gets the runs of projects that use this pool. Default: `default`."},
 			"token": schema.StringAttribute{Optional: true, Computed: true, Sensitive: true,
 				PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplaceIfConfigured(), stringplanmodifier.UseStateForUnknown()},
-				Description:   "Its token. Leave it out and Opsolete creates one (kept in Terraform's state: keep that encrypted); or set one from a secret store (at least 32 characters, e.g. `openssl rand -hex 32`)."},
+				Description:   "Its token. Leave it out and OPS creates one (kept in Terraform's state: keep that encrypted); or set one from a secret store (at least 32 characters, e.g. `openssl rand -hex 32`)."},
 		},
 	}
 }
@@ -64,7 +64,7 @@ func (r *runnerResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 	m.ID, m.Pool = types.StringValue(rn.ID), types.StringValue(rn.Pool)
-	if rn.Token != "" { // created here: the only time Opsolete returns it
+	if rn.Token != "" { // created here: the only time OPS returns it
 		m.Token = types.StringValue(rn.Token)
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &m)...)

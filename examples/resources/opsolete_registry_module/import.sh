@@ -1,1 +1,0 @@
-terraform import opsolete_registry_module.storage_account terraform-modules-examples/storage-account/azurerm

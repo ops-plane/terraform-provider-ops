@@ -15,11 +15,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_workspace_variable and opsolete_variable_set_variable: one variable of a workspace or of a variable set.
-// A sensitive value is write-only in Opsolete: the provider keeps the configured value and can't see a change made in
+// ops_workspace_variable and ops_variable_set_variable: one variable of a workspace or of a variable set.
+// A sensitive value is write-only in OPS: the provider keeps the configured value and can't see a change made in
 // the UI.
 
 // variableModel is a variable resource's attributes; owner is its workspace_id or variable_set_id. Read and written
@@ -72,7 +72,7 @@ func (r *variableResource) Metadata(_ context.Context, req resource.MetadataRequ
 func (r *variableResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	replace := []planmodifier.String{stringplanmodifier.RequiresReplace()}
 	resp.Schema = schema.Schema{
-		Description: "A variable of a " + r.what + ": an environment variable (e.g. cloud credentials) or a Terraform input variable. A sensitive value is write-only in Opsolete: Terraform can't see a change made to it in the UI.",
+		Description: "A variable of a " + r.what + ": an environment variable (e.g. cloud credentials) or a Terraform input variable. A sensitive value is write-only in OPS: Terraform can't see a change made to it in the UI.",
 		Attributes: map[string]schema.Attribute{
 			"id":        schema.StringAttribute{Computed: true, PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()}},
 			r.ownerAttr: schema.StringAttribute{Required: true, PlanModifiers: replace, Description: "The " + r.what + "'s id."},
@@ -125,7 +125,7 @@ func (r *variableResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 	m.Category, m.Key, m.Sensitive, m.HCL = types.StringValue(v.Category), types.StringValue(v.Key), types.BoolValue(v.Sensitive), types.BoolValue(v.HCL)
-	if v.Value != nil { // a sensitive one keeps the configured value: Opsolete doesn't return it
+	if v.Value != nil { // a sensitive one keeps the configured value: OPS doesn't return it
 		m.Value = types.StringValue(*v.Value)
 	} else if m.Value.IsNull() { // imported: unknown until the configuration sets it
 		m.Value = types.StringValue("")

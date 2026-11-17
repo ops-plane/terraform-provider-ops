@@ -13,21 +13,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// Acceptance tests run real Terraform against a real Opsolete (TF_ACC=1, OPSOLETE_URL, OPSOLETE_TOKEN: a service
+// Acceptance tests run real Terraform against a real OPS (TF_ACC=1, OPSPLANE_URL, OPSPLANE_TOKEN: a service
 // token). Every object they create has a random suffix and is destroyed at the end.
 
 var factories = map[string]func() (tfprotov6.ProviderServer, error){
-	"opsolete": providerserver.NewProtocol6WithError(New("test")()),
+	"ops": providerserver.NewProtocol6WithError(New("test")()),
 }
 
 func preCheck(t *testing.T) {
 	t.Helper()
-	for _, k := range []string{"OPSOLETE_URL", "OPSOLETE_TOKEN"} {
+	for _, k := range []string{"OPSPLANE_URL", "OPSPLANE_TOKEN"} {
 		if os.Getenv(k) == "" {
-			t.Fatalf("%s is not set: acceptance tests need a running Opsolete and a service token", k)
+			t.Fatalf("%s is not set: acceptance tests need a running OPS and a service token", k)
 		}
 	}
 }
@@ -39,14 +39,14 @@ func TestAccProject(t *testing.T) {
 	name := "acc-" + suffix()
 	cfg := func(desc string) string {
 		return fmt.Sprintf(`
-resource "opsolete_project" "p" {
+resource "ops_project" "p" {
   name        = %q
   description = %q
   runner_pool = "acc"
 }
-data "opsolete_project" "p" {
-  name       = opsolete_project.p.name
-  depends_on = [opsolete_project.p]
+data "ops_project" "p" {
+  name       = ops_project.p.name
+  depends_on = [ops_project.p]
 }`, name, desc)
 	}
 	resource.Test(t, resource.TestCase{
@@ -54,12 +54,12 @@ data "opsolete_project" "p" {
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
 			{Config: cfg("first"), Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_project.p", "description", "first"),
-				resource.TestCheckResourceAttr("opsolete_project.p", "runner_pool", "acc"),
-				resource.TestCheckResourceAttr("opsolete_project.p", "default", "false"),
-				resource.TestCheckResourceAttrPair("data.opsolete_project.p", "id", "opsolete_project.p", "id"))},
-			{Config: cfg("second"), Check: resource.TestCheckResourceAttr("opsolete_project.p", "description", "second")},
-			{ResourceName: "opsolete_project.p", ImportState: true, ImportStateId: name, ImportStateVerify: true},
+				resource.TestCheckResourceAttr("ops_project.p", "description", "first"),
+				resource.TestCheckResourceAttr("ops_project.p", "runner_pool", "acc"),
+				resource.TestCheckResourceAttr("ops_project.p", "default", "false"),
+				resource.TestCheckResourceAttrPair("data.ops_project.p", "id", "ops_project.p", "id"))},
+			{Config: cfg("second"), Check: resource.TestCheckResourceAttr("ops_project.p", "description", "second")},
+			{ResourceName: "ops_project.p", ImportState: true, ImportStateId: name, ImportStateVerify: true},
 		},
 	})
 }
@@ -70,27 +70,27 @@ func TestAccWorkspace(t *testing.T) {
 	sfx := suffix()
 	cfg := func(ws, plain string) string {
 		return fmt.Sprintf(`
-resource "opsolete_project" "p" { name = "acc-%[1]s" }
-resource "opsolete_workspace" "w" {
+resource "ops_project" "p" { name = "acc-%[1]s" }
+resource "ops_workspace" "w" {
   name            = %[2]q
-  project_id      = opsolete_project.p.id
+  project_id      = ops_project.p.id
   drift_detection = true
 }
-resource "opsolete_workspace_variable" "plain" {
-  workspace_id = opsolete_workspace.w.id
+resource "ops_workspace_variable" "plain" {
+  workspace_id = ops_workspace.w.id
   category     = "terraform"
   key          = "region"
   value        = %[3]q
 }
-resource "opsolete_workspace_variable" "secret" {
-  workspace_id = opsolete_workspace.w.id
+resource "ops_workspace_variable" "secret" {
+  workspace_id = ops_workspace.w.id
   category     = "env"
   key          = "ARM_CLIENT_SECRET"
   value        = "s3cret"
   sensitive    = true
 }
-resource "opsolete_workspace_variable" "tags" {
-  workspace_id = opsolete_workspace.w.id
+resource "ops_workspace_variable" "tags" {
+  workspace_id = ops_workspace.w.id
   category     = "terraform"
   key          = "tags"
   value        = "{env = \"acc\"}"
@@ -103,27 +103,27 @@ resource "opsolete_workspace_variable" "tags" {
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
 			{Config: cfg("acc-ws-"+sfx, "westeurope"), Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttrPair("opsolete_workspace.w", "project_id", "opsolete_project.p", "id"),
-				resource.TestCheckResourceAttr("opsolete_workspace.w", "execution_mode", "remote"),
-				resource.TestCheckResourceAttr("opsolete_workspace.w", "drift_detection", "true"),
-				resource.TestCheckResourceAttr("opsolete_workspace_variable.secret", "value", "s3cret"), // kept: not returned
+				resource.TestCheckResourceAttrPair("ops_workspace.w", "project_id", "ops_project.p", "id"),
+				resource.TestCheckResourceAttr("ops_workspace.w", "execution_mode", "remote"),
+				resource.TestCheckResourceAttr("ops_workspace.w", "drift_detection", "true"),
+				resource.TestCheckResourceAttr("ops_workspace_variable.secret", "value", "s3cret"), // kept: not returned
 				func(s *terraform.State) error {
-					firstID = s.RootModule().Resources["opsolete_workspace.w"].Primary.ID
+					firstID = s.RootModule().Resources["ops_workspace.w"].Primary.ID
 					return nil
 				})},
 			{Config: cfg("acc-ws2-"+sfx, "northeurope"), Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_workspace.w", "name", "acc-ws2-"+sfx),
-				resource.TestCheckResourceAttr("opsolete_workspace_variable.plain", "value", "northeurope"),
+				resource.TestCheckResourceAttr("ops_workspace.w", "name", "acc-ws2-"+sfx),
+				resource.TestCheckResourceAttr("ops_workspace_variable.plain", "value", "northeurope"),
 				func(s *terraform.State) error {
-					if id := s.RootModule().Resources["opsolete_workspace.w"].Primary.ID; id != firstID {
+					if id := s.RootModule().Resources["ops_workspace.w"].Primary.ID; id != firstID {
 						return fmt.Errorf("renaming replaced the workspace: %s → %s", firstID, id)
 					}
 					return nil
 				})},
-			{ResourceName: "opsolete_workspace.w", ImportState: true, ImportStateId: "acc-ws2-" + sfx, ImportStateVerify: true},
-			{ResourceName: "opsolete_workspace_variable.plain", ImportState: true, ImportStateVerify: true,
+			{ResourceName: "ops_workspace.w", ImportState: true, ImportStateId: "acc-ws2-" + sfx, ImportStateVerify: true},
+			{ResourceName: "ops_workspace_variable.plain", ImportState: true, ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					r := s.RootModule().Resources["opsolete_workspace_variable.plain"].Primary
+					r := s.RootModule().Resources["ops_workspace_variable.plain"].Primary
 					return r.Attributes["workspace_id"] + "/" + r.ID, nil
 				}},
 		},
@@ -134,60 +134,60 @@ resource "opsolete_workspace_variable" "tags" {
 func TestAccVariableSet(t *testing.T) {
 	sfx := suffix()
 	cfg := fmt.Sprintf(`
-resource "opsolete_project" "p" { name = "acc-%[1]s" }
-resource "opsolete_workspace" "w" {
+resource "ops_project" "p" { name = "acc-%[1]s" }
+resource "ops_workspace" "w" {
   name       = "acc-ws-%[1]s"
-  project_id = opsolete_project.p.id
+  project_id = ops_project.p.id
 }
-resource "opsolete_variable_set" "s" {
+resource "ops_variable_set" "s" {
   name     = "acc-set-%[1]s"
   priority = true
 }
-resource "opsolete_variable_set_variable" "v" {
-  variable_set_id = opsolete_variable_set.s.id
+resource "ops_variable_set_variable" "v" {
+  variable_set_id = ops_variable_set.s.id
   category        = "env"
   key             = "ARM_SUBSCRIPTION_ID"
   value           = "00000000-0000-0000-0000-000000000001"
 }
-resource "opsolete_variable_set_project" "p" {
-  variable_set_id = opsolete_variable_set.s.id
-  project_id      = opsolete_project.p.id
+resource "ops_variable_set_project" "p" {
+  variable_set_id = ops_variable_set.s.id
+  project_id      = ops_project.p.id
 }
-resource "opsolete_variable_set_workspace" "w" {
-  variable_set_id = opsolete_variable_set.s.id
-  workspace_id    = opsolete_workspace.w.id
+resource "ops_variable_set_workspace" "w" {
+  variable_set_id = ops_variable_set.s.id
+  workspace_id    = ops_workspace.w.id
 }
-data "opsolete_variable_set" "s" {
-  name       = opsolete_variable_set.s.name
-  depends_on = [opsolete_variable_set.s]
+data "ops_variable_set" "s" {
+  name       = ops_variable_set.s.name
+  depends_on = [ops_variable_set.s]
 }`, sfx)
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { preCheck(t) },
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
 			{Config: cfg, Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_variable_set.s", "priority", "true"),
-				resource.TestCheckResourceAttrPair("data.opsolete_variable_set.s", "id", "opsolete_variable_set.s", "id"))},
-			{ResourceName: "opsolete_variable_set.s", ImportState: true, ImportStateId: "acc-set-" + sfx, ImportStateVerify: true},
-			{ResourceName: "opsolete_variable_set_project.p", ImportState: true, ImportStateVerify: true},
-			{ResourceName: "opsolete_variable_set_workspace.w", ImportState: true, ImportStateVerify: true},
+				resource.TestCheckResourceAttr("ops_variable_set.s", "priority", "true"),
+				resource.TestCheckResourceAttrPair("data.ops_variable_set.s", "id", "ops_variable_set.s", "id"))},
+			{ResourceName: "ops_variable_set.s", ImportState: true, ImportStateId: "acc-set-" + sfx, ImportStateVerify: true},
+			{ResourceName: "ops_variable_set_project.p", ImportState: true, ImportStateVerify: true},
+			{ResourceName: "ops_variable_set_workspace.w", ImportState: true, ImportStateVerify: true},
 		},
 	})
 }
 
 // TestAccEnvironmentValue sets a project's value for a template's per-environment input: needs such a template in the
-// catalog (OPSOLETE_ACC_TEMPLATE_ID, OPSOLETE_ACC_INPUT, OPSOLETE_ACC_VALUES: two allowed values, comma-separated).
+// catalog (OPSPLANE_ACC_TEMPLATE_ID, OPSPLANE_ACC_INPUT, OPSPLANE_ACC_VALUES: two allowed values, comma-separated).
 func TestAccEnvironmentValue(t *testing.T) {
-	tpl, input, values := os.Getenv("OPSOLETE_ACC_TEMPLATE_ID"), os.Getenv("OPSOLETE_ACC_INPUT"), strings.Split(os.Getenv("OPSOLETE_ACC_VALUES"), ",")
+	tpl, input, values := os.Getenv("OPSPLANE_ACC_TEMPLATE_ID"), os.Getenv("OPSPLANE_ACC_INPUT"), strings.Split(os.Getenv("OPSPLANE_ACC_VALUES"), ",")
 	if tpl == "" || input == "" || len(values) != 2 {
-		t.Skip("OPSOLETE_ACC_TEMPLATE_ID, OPSOLETE_ACC_INPUT and OPSOLETE_ACC_VALUES name a template's per-environment input")
+		t.Skip("OPSPLANE_ACC_TEMPLATE_ID, OPSPLANE_ACC_INPUT and OPSPLANE_ACC_VALUES name a template's per-environment input")
 	}
 	sfx := suffix()
 	cfg := func(value string) string {
 		return fmt.Sprintf(`
-resource "opsolete_project" "p" { name = "acc-%s" }
-resource "opsolete_environment_value" "v" {
-  project_id  = opsolete_project.p.id
+resource "ops_project" "p" { name = "acc-%s" }
+resource "ops_environment_value" "v" {
+  project_id  = ops_project.p.id
   template_id = %q
   input       = %q
   value       = %q
@@ -197,19 +197,19 @@ resource "opsolete_environment_value" "v" {
 		PreCheck:                 func() { preCheck(t) },
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
-			{Config: cfg(values[0]), Check: resource.TestCheckResourceAttr("opsolete_environment_value.v", "value", values[0])},
-			{Config: cfg(values[1]), Check: resource.TestCheckResourceAttr("opsolete_environment_value.v", "value", values[1])},
-			{ResourceName: "opsolete_environment_value.v", ImportState: true, ImportStateVerify: true},
+			{Config: cfg(values[0]), Check: resource.TestCheckResourceAttr("ops_environment_value.v", "value", values[0])},
+			{Config: cfg(values[1]), Check: resource.TestCheckResourceAttr("ops_environment_value.v", "value", values[1])},
+			{ResourceName: "ops_environment_value.v", ImportState: true, ImportStateVerify: true},
 		},
 	})
 }
 
-// TestAccVCSConnection creates a GitHub connection: needs a token GitHub accepts (OPSOLETE_ACC_GITHUB_TOKEN), as
-// Opsolete checks it.
+// TestAccVCSConnection creates a GitHub connection: needs a token GitHub accepts (OPSPLANE_ACC_GITHUB_TOKEN), as
+// OPS checks it.
 func TestAccVCSConnection(t *testing.T) {
-	token := os.Getenv("OPSOLETE_ACC_GITHUB_TOKEN")
+	token := os.Getenv("OPSPLANE_ACC_GITHUB_TOKEN")
 	if token == "" {
-		t.Skip("OPSOLETE_ACC_GITHUB_TOKEN: a GitHub token Opsolete can check")
+		t.Skip("OPSPLANE_ACC_GITHUB_TOKEN: a GitHub token OPS can check")
 	}
 	sfx := suffix()
 	cfg := func(scope string) string {
@@ -218,7 +218,7 @@ variable "token" {
   type      = string
   sensitive = true
 }
-resource "opsolete_vcs_connection" "c" {
+resource "ops_vcs_connection" "c" {
   name          = "acc-%s"
   provider_type = "github"
   token         = var.token
@@ -230,22 +230,22 @@ resource "opsolete_vcs_connection" "c" {
 		PreCheck:                 func() { preCheck(t) },
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
-			{Config: cfg(""), Check: resource.TestCheckResourceAttr("opsolete_vcs_connection.c", "provider_type", "github")},
-			{Config: cfg("all"), Check: resource.TestCheckResourceAttr("opsolete_vcs_connection.c", "scope", "all")},
-			{ResourceName: "opsolete_vcs_connection.c", ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"token"}},
+			{Config: cfg(""), Check: resource.TestCheckResourceAttr("ops_vcs_connection.c", "provider_type", "github")},
+			{Config: cfg("all"), Check: resource.TestCheckResourceAttr("ops_vcs_connection.c", "scope", "all")},
+			{ResourceName: "ops_vcs_connection.c", ImportState: true, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"token"}},
 		},
 	})
 }
 
-// TestAccRunner: a runner with a token Opsolete creates (kept in the state), and one with a token from a secret store.
+// TestAccRunner: a runner with a token OPS creates (kept in the state), and one with a token from a secret store.
 func TestAccRunner(t *testing.T) {
 	sfx := suffix()
 	cfg := fmt.Sprintf(`
-resource "opsolete_runner" "made" {
+resource "ops_runner" "made" {
   name = "acc-%[1]s"
   pool = "acc"
 }
-resource "opsolete_runner" "own" {
+resource "ops_runner" "own" {
   name  = "acc-own-%[1]s"
   token = %[2]q
 }`, sfx, strings.Repeat("t", 40))
@@ -254,28 +254,28 @@ resource "opsolete_runner" "own" {
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
 			{Config: cfg, Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_runner.made", "pool", "acc"),
-				resource.TestCheckResourceAttrWith("opsolete_runner.made", "token", func(v string) error {
+				resource.TestCheckResourceAttr("ops_runner.made", "pool", "acc"),
+				resource.TestCheckResourceAttrWith("ops_runner.made", "token", func(v string) error {
 					if !strings.HasPrefix(v, "opsr_") {
 						return fmt.Errorf("a created runner's token: %q", v)
 					}
 					return nil
 				}),
-				resource.TestCheckResourceAttr("opsolete_runner.own", "pool", "default"))},
-			{ResourceName: "opsolete_runner.made", ImportState: true, ImportStateId: "acc-" + sfx, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"token"}},
+				resource.TestCheckResourceAttr("ops_runner.own", "pool", "default"))},
+			{ResourceName: "ops_runner.made", ImportState: true, ImportStateId: "acc-" + sfx, ImportStateVerify: true, ImportStateVerifyIgnore: []string{"token"}},
 		},
 	})
 }
 
-// TestAccRegistryModule publishes a module from a public GitHub repository's tags: needs a GitHub token Opsolete can
-// check (OPSOLETE_ACC_GITHUB_TOKEN); Opsolete/terraform-modules-examples' storage-account by default
-// (OPSOLETE_ACC_MODULE_REPO, OPSOLETE_ACC_MODULE_DIR: its folder and tag prefix <dir>-).
+// TestAccRegistryModule publishes a module from a public GitHub repository's tags: needs a GitHub token OPS can
+// check (OPSPLANE_ACC_GITHUB_TOKEN); ops-plane/terraform-modules-examples' storage-account by default
+// (OPSPLANE_ACC_MODULE_REPO, OPSPLANE_ACC_MODULE_DIR: its folder and tag prefix <dir>-).
 func TestAccRegistryModule(t *testing.T) {
-	token := os.Getenv("OPSOLETE_ACC_GITHUB_TOKEN")
+	token := os.Getenv("OPSPLANE_ACC_GITHUB_TOKEN")
 	if token == "" {
-		t.Skip("OPSOLETE_ACC_GITHUB_TOKEN: a GitHub token Opsolete can check")
+		t.Skip("OPSPLANE_ACC_GITHUB_TOKEN: a GitHub token OPS can check")
 	}
-	repo, dir := envOr("OPSOLETE_ACC_MODULE_REPO", "Opsolete/terraform-modules-examples"), envOr("OPSOLETE_ACC_MODULE_DIR", "storage-account")
+	repo, dir := envOr("OPSPLANE_ACC_MODULE_REPO", "ops-plane/terraform-modules-examples"), envOr("OPSPLANE_ACC_MODULE_DIR", "storage-account")
 	sfx := suffix()
 	t.Setenv("TF_VAR_token", token)
 	resource.Test(t, resource.TestCase{
@@ -287,17 +287,17 @@ variable "token" {
   type      = string
   sensitive = true
 }
-resource "opsolete_vcs_connection" "gh" {
+resource "ops_vcs_connection" "gh" {
   name          = "acc-%[1]s"
   provider_type = "github"
   token         = var.token
 }
-data "opsolete_vcs_connection" "gh" {
-  name       = opsolete_vcs_connection.gh.name
-  depends_on = [opsolete_vcs_connection.gh]
+data "ops_vcs_connection" "gh" {
+  name       = ops_vcs_connection.gh.name
+  depends_on = [ops_vcs_connection.gh]
 }
-resource "opsolete_registry_module" "m" {
-  vcs_connection_id = data.opsolete_vcs_connection.gh.id
+resource "ops_registry_module" "m" {
+  vcs_connection_id = data.ops_vcs_connection.gh.id
   repo              = %[2]q
   dir               = %[3]q
   tag_prefix        = "%[3]s-"
@@ -305,32 +305,32 @@ resource "opsolete_registry_module" "m" {
   name              = %[3]q
   system            = "azurerm"
 }`, sfx, repo, dir), Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_registry_module.m", "id", "acc"+sfx+"/"+dir+"/azurerm"),
-				resource.TestCheckResourceAttrWith("opsolete_registry_module.m", "versions.#", func(v string) error {
+				resource.TestCheckResourceAttr("ops_registry_module.m", "id", "acc"+sfx+"/"+dir+"/azurerm"),
+				resource.TestCheckResourceAttrWith("ops_registry_module.m", "versions.#", func(v string) error {
 					if v == "0" {
 						return fmt.Errorf("no version published from the tags")
 					}
 					return nil
 				}))},
-			{ResourceName: "opsolete_registry_module.m", ImportState: true, ImportStateVerify: true},
+			{ResourceName: "ops_registry_module.m", ImportState: true, ImportStateVerify: true},
 		},
 	})
 }
 
-// TestAccTemplateCatalog connects the template catalog to a GitHub repository (OPSOLETE_ACC_GITHUB_TOKEN; the repo of
+// TestAccTemplateCatalog connects the template catalog to a GitHub repository (OPSPLANE_ACC_GITHUB_TOKEN; the repo of
 // TestAccRegistryModule, a folder without templates) and disconnects it. Destroying it disconnects the catalog, so it
-// refuses to run on an Opsolete whose catalog is connected already.
+// refuses to run on an OPS whose catalog is connected already.
 func TestAccTemplateCatalog(t *testing.T) {
-	token := os.Getenv("OPSOLETE_ACC_GITHUB_TOKEN")
+	token := os.Getenv("OPSPLANE_ACC_GITHUB_TOKEN")
 	if token == "" {
-		t.Skip("OPSOLETE_ACC_GITHUB_TOKEN: a GitHub token Opsolete can check")
+		t.Skip("OPSPLANE_ACC_GITHUB_TOKEN: a GitHub token OPS can check")
 	}
 	preCheck(t)
 	c := testClient(t)
 	if err := c.Do(context.Background(), "GET", "/template-catalog", nil, nil); err == nil {
-		t.Skip("this Opsolete's template catalog is connected: the test would disconnect it")
+		t.Skip("this OPS's template catalog is connected: the test would disconnect it")
 	}
-	repo, dir := envOr("OPSOLETE_ACC_MODULE_REPO", "Opsolete/terraform-modules-examples"), envOr("OPSOLETE_ACC_MODULE_DIR", "storage-account")
+	repo, dir := envOr("OPSPLANE_ACC_MODULE_REPO", "ops-plane/terraform-modules-examples"), envOr("OPSPLANE_ACC_MODULE_DIR", "storage-account")
 	t.Setenv("TF_VAR_token", token)
 	cfg := func(mode string) string {
 		return fmt.Sprintf(`
@@ -338,13 +338,13 @@ variable "token" {
   type      = string
   sensitive = true
 }
-resource "opsolete_vcs_connection" "gh" {
+resource "ops_vcs_connection" "gh" {
   name          = "acc-cat-%[1]s"
   provider_type = "github"
   token         = var.token
 }
-resource "opsolete_template_catalog" "c" {
-  vcs_connection_id = opsolete_vcs_connection.gh.id
+resource "ops_template_catalog" "c" {
+  vcs_connection_id = ops_vcs_connection.gh.id
   repo              = %[2]q
   dir               = %[3]q
   mode              = %[4]q
@@ -355,10 +355,10 @@ resource "opsolete_template_catalog" "c" {
 		ProtoV6ProviderFactories: factories,
 		Steps: []resource.TestStep{
 			{Config: cfg("off"), Check: resource.ComposeTestCheckFunc(
-				resource.TestCheckResourceAttr("opsolete_template_catalog.c", "branch", "main"),
-				resource.TestCheckResourceAttrSet("opsolete_template_catalog.c", "commit"))},
-			{Config: cfg("pr"), Check: resource.TestCheckResourceAttr("opsolete_template_catalog.c", "mode", "pr")},
-			{ResourceName: "opsolete_template_catalog.c", ImportState: true, ImportStateVerify: true},
+				resource.TestCheckResourceAttr("ops_template_catalog.c", "branch", "main"),
+				resource.TestCheckResourceAttrSet("ops_template_catalog.c", "commit"))},
+			{Config: cfg("pr"), Check: resource.TestCheckResourceAttr("ops_template_catalog.c", "mode", "pr")},
+			{ResourceName: "ops_template_catalog.c", ImportState: true, ImportStateVerify: true},
 		},
 	})
 }
@@ -374,7 +374,7 @@ func envOr(k, fallback string) string {
 
 func testClient(t *testing.T) *client.Client {
 	t.Helper()
-	c, err := client.New(os.Getenv("OPSOLETE_URL"), os.Getenv("OPSOLETE_TOKEN"))
+	c, err := client.New(os.Getenv("OPSPLANE_URL"), os.Getenv("OPSPLANE_TOKEN"))
 	if err != nil {
 		t.Fatal(err)
 	}

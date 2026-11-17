@@ -11,10 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_environment_value: a project's value for a template's per-environment input (its Environment values
+// ops_environment_value: a project's value for a template's per-environment input (its Environment values
 // page): every workspace of the project runs with it.
 
 type environmentValueModel struct {

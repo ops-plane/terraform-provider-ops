@@ -14,10 +14,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/opsolete/terraform-provider-opsolete/internal/client"
+	"github.com/ops-plane/terraform-provider-ops/internal/client"
 )
 
-// opsolete_project: a project (a group of workspaces: its team access, variable sets, runner pool and environment
+// ops_project: a project (a group of workspaces: its team access, variable sets, runner pool and environment
 // values reach them all). Admins'.
 
 type projectModel struct {
@@ -138,7 +138,7 @@ func (r *projectResource) ImportState(ctx context.Context, req resource.ImportSt
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
-// data "opsolete_project": a project by name.
+// data "ops_project": a project by name.
 
 type projectDataSource struct{ base }
 
