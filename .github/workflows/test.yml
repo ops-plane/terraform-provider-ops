@@ -17,7 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ops: [master, v0.11.0] # the newest and the oldest OPS all its resources support
+        # shortcut: master only, since no release has the ops-plane module path yet; add v0.12.0 (the oldest OPS
+        # it supports) once that's released
+        ops: [master]
     services:
       postgres:
         image: postgres:17
@@ -50,8 +52,9 @@ jobs:
         run: go generate ./... && git diff --exit-code docs
       - name: OPS
         run: |
-          # direct: the module proxy caches what a branch name resolves to, so @master could be an older commit
-          GOPROXY=direct go install github.com/ops-plane/ops/cmd/ops@${{ matrix.ops }}
+          # OPS itself direct (the module proxy caches what a branch name resolves to, so @master could be an older
+          # commit); its dependencies through the proxy and checksum database, as go.sum expects them
+          GOPRIVATE=github.com/ops-plane/ops go install github.com/ops-plane/ops/cmd/ops@${{ matrix.ops }}
           # a template with a per-environment input, for TestAccEnvironmentValue
           mkdir -p /tmp/catalog
           echo '{"id": "acc", "name": "Acc", "module": {"source": "git::https://example.com/m.git", "ref": "v1"}, "inputs": [
