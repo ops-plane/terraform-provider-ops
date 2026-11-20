@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"sort"
 	"strings"
@@ -28,7 +29,19 @@ func New(baseURL, token string) (*Client, error) {
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return nil, fmt.Errorf("url %q: an absolute URL such as https://ops.example.com", baseURL)
 	}
+	// The token has admin rights: plain HTTP only where it can't leave the machine.
+	if u.Scheme != "https" && !(u.Scheme == "http" && isLoopback(u.Hostname())) {
+		return nil, fmt.Errorf("url %q: use https (http only for localhost or a loopback address)", baseURL)
+	}
 	return &Client{BaseURL: u, Token: token, HTTP: &http.Client{Timeout: 2 * time.Minute}}, nil
+}
+
+func isLoopback(host string) bool {
+	if ip, err := netip.ParseAddr(host); err == nil {
+		return ip.IsLoopback()
+	}
+	host = strings.ToLower(host)
+	return host == "localhost" || strings.HasSuffix(host, ".localhost")
 }
 
 // Error is an error answer of the API.
