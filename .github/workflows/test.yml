@@ -46,6 +46,8 @@ jobs:
           terraform_version: 1.17.1
           terraform_wrapper: false
       - run: go vet ./... && go build ./...
+      # Reports only vulnerabilities in code paths the provider actually calls.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: docs are generated from the current schema and examples
         run: go generate ./... && git diff --exit-code docs
       - name: OPS
